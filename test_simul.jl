@@ -13,10 +13,10 @@ a_neighbour = Dict("l_fw" => ["b", 1])
 station_a = Station("a", ["l"], "Station A", 6, 0, a_neighbour, 1, [], [])
 
 
-b_neighbour = Dict("l_fw" => ["c", 1], "l_bw" => ["a", 1])
+b_neighbour = Dict("l_fw" => ["c", 2], "l_bw" => ["a", 1])
 station_b = Station("b", ["l"], "Station B", 6, 1, b_neighbour, 1, [], [])
 
-c_neighbour = Dict("l_bw" => ["b", 1])
+c_neighbour = Dict("l_bw" => ["b", 2])
 station_c = Station("c", ["l"], "Station C", 6, 2, c_neighbour, 1, [], [])
 
 train = Train("1", "l", "fw", false, 2, [])
@@ -61,7 +61,42 @@ first_event = Event(
 			)
 	)
 
+spawn_event_a = Event(
+		0,
+		spawn_commuter!,
+		Dict(
+				:time => 0,
+				:metro => metro,
+				:station => "a"
+			)
 
+	)
+
+spawn_event_b = Event(
+		1,
+		spawn_commuter!,
+		Dict(
+				:time => 1,
+				:metro => metro,
+				:station => "b"
+			)
+
+	)
+
+spawn_event_c = Event(
+		2,
+		spawn_commuter!,
+		Dict(
+				:time => 2,
+				:metro => metro,
+				:station => "c"
+			)
+
+	)
 heappush!(event_queue, first_event)
+heappush!(event_queue, spawn_event_a)
+heappush!(event_queue, spawn_event_b)
+heappush!(event_queue, spawn_event_c)
+
 
 simulate!(max_time, metro, event_queue)

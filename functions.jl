@@ -1,6 +1,41 @@
 # all functions return a new event function
 # The new event function adds all the events into the queue
 
+function spawn_commuter!(;time, metro, station)
+	println("time $time: spawning commuter at Station $station")
+	s = metro.stations[station]
+
+	if station == "a"
+		next = "c"
+	elseif station == "b"
+		next = "a"
+	elseif station == "c"
+		next = "a"
+	end
+
+	new_commuter = Commuter(
+			station,
+			station * "_" * next,
+			true,
+			time,
+			time
+		)
+	push!(s.commuters, new_commuter)
+
+	new_time = time + s.spawn_rate
+	next_spawn_event = Event(
+			new_time,
+			spawn_commuter!,
+			Dict(
+					:time => new_time,
+					:metro => metro,
+					:station => station
+				)
+		)
+
+	return [next_spawn_event]
+end
+
 function train_reach_station!(;time, metro, train, station)
 	# board passengers
 	println("time $time: Train $train reaching Station $station")
@@ -65,7 +100,7 @@ function simulate!(max_time, metro, event_queue)
 	while event_queue[1].time < max_time
 		# release the most recent event
 		curr_event = heappop!(event_queue)
-
+		print(curr_event.time)
 		# do whatever the event requires
 		new_events = curr_event.fun(;curr_event.params...)
 		# update and add the new events generated
@@ -73,4 +108,5 @@ function simulate!(max_time, metro, event_queue)
 			heappush!(event_queue, i)
 		end
 	end
+	print(metro.stations["b"])
 end

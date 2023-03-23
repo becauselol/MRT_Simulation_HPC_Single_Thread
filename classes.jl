@@ -4,10 +4,9 @@ struct Event
 	params::Dict
 end
 
-
 mutable struct Commuter
-	origin::Int64 # origin station id
-	path::Vector{Vector} # path to take
+	origin::String # origin station id
+	path::String # path to take
 	state::Bool # state of commuter (True means waiting false means moving)
 	spawn_time::Int64 # time it was spawned at
 	wait_start::Int64 # time it started waiting for the next train
