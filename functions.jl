@@ -97,10 +97,12 @@ end
 
 
 function simulate!(max_time, metro, event_queue)
+	for i in event_queue
+		println(i)
+	end
 	while event_queue[1].time < max_time
 		# release the most recent event
 		curr_event = heappop!(event_queue)
-		print(curr_event.time)
 		# do whatever the event requires
 		new_events = curr_event.fun(;curr_event.params...)
 		# update and add the new events generated
@@ -108,5 +110,7 @@ function simulate!(max_time, metro, event_queue)
 			heappush!(event_queue, i)
 		end
 	end
-	print(metro.stations["b"])
+	for i in event_queue
+		println(i)
+	end
 end

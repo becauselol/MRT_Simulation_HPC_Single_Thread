@@ -32,7 +32,7 @@ function min_heapify!(heap, index)
 		smallest = index
 	end
 
-	if right <= size(heap)[1] && heap[left].time < heap[smallest].time
+	if right <= size(heap)[1] && heap[right].time < heap[smallest].time
 		smallest = right 
 	end
 	
