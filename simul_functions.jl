@@ -2,6 +2,7 @@
 # The new event function adds all the events into the queue
 include("station_functions.jl")
 include("utility_functions.jl")
+include("data_store_functions.jl")
 
 function spawn_commuter!(;time, metro, station)
 	
@@ -20,7 +21,7 @@ function spawn_commuter!(;time, metro, station)
 			time
 		)
 
-	add_commuter_to_station!(metro, s, new_commuter)
+	data_update = add_commuter_to_station!(time, metro, s, new_commuter)
 
 	new_time = time + s.spawn_rate
 	next_spawn_event = Event(
@@ -32,16 +33,20 @@ function spawn_commuter!(;time, metro, station)
 				)
 		)
 
-	return [next_spawn_event]
+	return Dict(
+			"data_store" => data_update,
+			"new_events" => [next_spawn_event]
+		)
 end
 
 function terminate_commuters!(;time, metro, station)
 	s = metro.stations[station]
 
-	count = remove_commuter_from_station!(metro, s)
-	println("time $time: removing $count commuters from Station $station")
+	data_update = remove_commuter_from_station!(time, metro, s)
 
-	return []
+	return Dict(
+			"data_store" => data_update
+		)
 end
 
 function train_reach_station!(;time, metro, train, station)
@@ -71,18 +76,12 @@ function train_reach_station!(;time, metro, train, station)
 	# alight and board passengers
 	println("time $time: Train $train reaching Station $station")
 
-	a_count = alight_commuters!(metro, t, s)
-	alight_count = a_count["total"]
-	println("          : $alight_count Commuters alighting Train $train at Station $station")
-
-	count = board_commuters!(metro, t, s)
-	println("          : $count Commuters boardng Train $train at Station $station")
-
+	data_update = alight_commuters!(time, metro, t, s)
 	
 	new_time = time + metro.stations[station].train_transit_time
 
 	# if any terminating passengers
-	if a_count["terminating"] > 0
+	if size(s.commuters["terminating"])[1] > 0
 		terminate_commuters = Event(
 			time,
 			terminate_commuters!,
@@ -105,7 +104,10 @@ function train_reach_station!(;time, metro, train, station)
 				)
 		)
 	push!(events, leave_station_event)
-	return events
+	return Dict(
+			"data_store" => data_update,
+			"new_events" => events
+		)
 end
 
 function train_leave_station!(;time, metro, train, station)
@@ -133,6 +135,8 @@ function train_leave_station!(;time, metro, train, station)
 		next_station = get(s.neighbours, line_direction, nothing)
 	end
 
+	data_update = board_commuters!(time, metro, t, s)
+
 	new_time = time + next_station[2]
 	reach_station_event = Event(
 			new_time,
@@ -144,19 +148,41 @@ function train_leave_station!(;time, metro, train, station)
 				)
 		)
 
-	return [reach_station_event]
+	return Dict(
+			"data_store" => data_update,
+			"new_events" => [reach_station_event]
+		)
 end
 
 
-function simulate!(max_time, metro, event_queue)
+function simulate!(max_time, metro, event_queue, data_store)
+	update_function = Dict(
+			"train_count" => update_train_count!,
+			"station_count" => update_station_count!,
+			"travel_time" => update_travel_time!,
+			"wait_time" => update_wait_time!
+		)
+
 	while event_queue[1].time < max_time
 		# release the most recent event
 		curr_event = heappop!(event_queue)
 		# do whatever the event requires
-		new_events = curr_event.fun(;curr_event.params..., metro=metro)
+		update = curr_event.fun(;curr_event.params..., metro=metro)
+
+		# update the various statistics
+		data_update = get(update, "data_store", Dict())
+		for (k, v) in data_update
+			update_fun = update_function[k]
+			update_fun(data_store, v)
+		end
+		# add_data_stores!(data_store, data_store_update)
+
 		# update and add the new events generated
+		new_events = get(update, "new_events", [])
 		for i in new_events
 			heappush!(event_queue, i)
 		end
 	end
+
+	return data_store
 end

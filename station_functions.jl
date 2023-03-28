@@ -1,24 +1,49 @@
-function add_commuter_to_station!(metro, station, commuter)
+function add_commuter_to_station!(time, metro, station, commuter)
+
 	chosen_path = metro.paths[station.station_id][commuter.target]
 	if !haskey(station.commuters, chosen_path["board"])
 		station.commuters[chosen_path["board"]] = []
 	end
 	push!(station.commuters[chosen_path["board"]], commuter)
+
+	station_count = Station_Commuter_Count(station.station_id, time, "post_spawn", get_number_commuters(station))
+
+	return Dict(
+			"station_count" => station_count
+		)
 end
 
-function remove_commuter_from_station!(metro, station)
+function remove_commuter_from_station!(time, metro, station)
+	travel_time_update = Travel_Time_Update(station.station_id, Dict())
+	
 	if !haskey(station.commuters, "terminating")
 		station.commuters["terminating"] = []
-		return 0
 	end
-	count = size(station.commuters["terminating"])[1]
+
+	for commuter in station.commuters["terminating"]
+		# we need to update travel time
+		origin = commuter.origin
+
+		travel_time = time - commuter.spawn_time
+		if !haskey(travel_time_update.update, origin)
+			travel_time_update.update[origin] = []
+		end
+		push!(travel_time_update.update[origin], travel_time)
+	end
+
 	station.commuters["terminating"] = []
 
-	return count
+	station_count = Station_Commuter_Count(station.station_id, time, "post_terminate", get_number_commuters(station))
+
+	return Dict(
+			"travel_time" => travel_time_update,
+			"station_count" => station_count
+		)
 end
 
-function board_commuters!(metro, train, station)
-	count = 0 
+function board_commuters!(time, metro, train, station)
+	train_count = Train_Commuter_Count(station.station_id, time, "pre_board", get_number_commuters(train))
+	wait_time_update = Wait_Time_Update(station.station_id, [])
 
 	line = train.line
 	direction = train.direction
@@ -26,52 +51,60 @@ function board_commuters!(metro, train, station)
 
 	if !haskey(station.commuters, line_direction)
 		station.commuters[line_direction] = []
-		return 0
 	end
 
 	while get_number_commuters(train) < train.capacity && size(station.commuters[line_direction])[1] > 0
 		commuter = popfirst!(station.commuters[line_direction])
 
+		# update the wait_time_update
+		wait_time = time - commuter.wait_start
+		push!(wait_time_update.update, wait_time)
+
+		# find the path it needs to go
 		chosen_path = metro.paths[station.station_id][commuter.target]
 
 		if !haskey(train.commuters, chosen_path["alight"])
 			train.commuters[chosen_path["alight"]] = []
 		end
+		# board the commuter
 		push!(train.commuters[chosen_path["alight"]], commuter)
-
-		count += 1
 	end
 
-	return count 
+	station_count = Station_Commuter_Count(station.station_id, time, "post_board", get_number_commuters(station))
+
+	return Dict(
+			"train_count" => train_count,
+			"station_count" => station_count,
+			"wait_time" => wait_time_update
+		)
 end
 
-function alight_commuters!(metro, train, station)
-	count = Dict(
-			"interchange" => 0,
-			"terminating" => 0,
-			"total" => 0
-		)
+function alight_commuters!(time, metro, train, station)
+	train_count = Train_Commuter_Count(station.station_id, time, "pre_alight", get_number_commuters(train))
 
 	if !haskey(train.commuters, station.station_id)
 		train.commuters[station.station_id] = []
-		return count
+	end
+
+	if !haskey(station.commuters, "terminating")
+		station.commuters["terminating"] = []
 	end
 	while size(train.commuters[station.station_id])[1] > 0
 		commuter = popfirst!(train.commuters[station.station_id])
+		commuter.wait_start = time
 		if commuter.target == station.station_id
-			if !haskey(station.commuters, "terminating")
-				station.commuters["terminating"] = []
-			end
+			
 			push!(station.commuters["terminating"], commuter)
 
-			count["terminating"] += 1
-			count["total"] += 1
  			continue
 		end
-
-		count["total"] += 1
 	end
 
-	return count 
+	station_count = Station_Commuter_Count(station.station_id, time, "post_alight", get_number_commuters(station))
+
+	return Dict(
+			"train_count" => train_count,
+			"station_count" => station_count
+		)
 end
 

@@ -46,9 +46,4 @@ end
 # 	nodes::Dict{String, CommuterNode}
 
 
-mutable struct DataStore
-	wait_times::Dict{Any, Any}
-	travel_times::Dict{String, Dict{String, Vector{Any}}}
-	station_commuter_count::Dict{String, Any}
-	station_train_commuter_count::Dict{String, Any}
-end
+

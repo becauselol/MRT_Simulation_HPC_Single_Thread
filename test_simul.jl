@@ -19,7 +19,7 @@ station_b = Station("b", ["l"], "Station B", 6, 1, b_neighbour, 2, Dict(), [])
 c_neighbour = Dict("l_bw" => ["b", 2])
 station_c = Station("c", ["l"], "Station C", 6, 2, c_neighbour, 2, Dict(), [])
 
-train = Train("1", "l", "fw", false, 2, Dict())
+train = Train("1", "l", "fw", false, 5, Dict())
 
 
 stations = Dict(
@@ -112,5 +112,6 @@ heappush!(event_queue, spawn_event_a)
 heappush!(event_queue, spawn_event_b)
 heappush!(event_queue, spawn_event_c)
 
+data_store = Data_Store(Dict(), Dict(), Dict(), Dict())
 
-simulate!(max_time, metro, event_queue)
+final_data = simulate!(max_time, metro, event_queue, data_store)
