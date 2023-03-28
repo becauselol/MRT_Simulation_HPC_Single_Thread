@@ -1,23 +1,23 @@
-mutable struct Station_Commuter_Count
+struct Station_Commuter_Count
 	station_id::String 
 	time::Int64
 	event::String
 	count::Int64
 end
 
-mutable struct Train_Commuter_Count
+struct Train_Commuter_Count
 	station_id::String 
 	time::Int64
 	event::String
 	count::Int64
 end
 
-mutable struct Wait_Time_Update
+struct Wait_Time_Update
 	station_id::String
 	update::Vector{Int64}
 end
 
-mutable struct Travel_Time_Update
+struct Travel_Time_Update
 	target_id::String
 	update::Dict{String, Vector{Int64}} # key is origin_id, value is the travel time
 end

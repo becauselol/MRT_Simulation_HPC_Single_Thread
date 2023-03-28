@@ -115,3 +115,33 @@ heappush!(event_queue, spawn_event_c)
 data_store = Data_Store(Dict(), Dict(), Dict(), Dict())
 
 final_data = simulate!(max_time, metro, event_queue, data_store)
+
+for (k, v) in final_data.wait_times
+	println("wait times for station $k")
+	println(v)
+end
+
+for (origin, v) in final_data.travel_times
+	for (dest, arr) in v 
+		println("travel times from station $origin to station $dest")
+		println(arr)
+	end 
+end 
+
+for (k, v) in final_data.station_commuter_count
+	println("commuter count for station $k")
+	new = []
+	for count in v
+		push!(new, count.count)
+	end
+	println(new)
+end
+
+for (k, v) in final_data.station_train_commuter_count
+	println("commuter count for trains at station $k")
+	new = []
+	for count in v
+		push!(new, count.count)
+	end
+	println(new)
+end
