@@ -73,7 +73,6 @@ first_event = Event(
 		train_reach_station!,
 		Dict(
 				:time => 0,
-				:metro => metro,
 				:train => "1",
 				:station => "a"
 			)
@@ -84,7 +83,6 @@ spawn_event_a = Event(
 		spawn_commuter!,
 		Dict(
 				:time => 0,
-				:metro => metro,
 				:station => "a"
 			)
 
@@ -95,7 +93,6 @@ spawn_event_b = Event(
 		spawn_commuter!,
 		Dict(
 				:time => 1,
-				:metro => metro,
 				:station => "b"
 			)
 
@@ -106,7 +103,6 @@ spawn_event_c = Event(
 		spawn_commuter!,
 		Dict(
 				:time => 2,
-				:metro => metro,
 				:station => "c"
 			)
 

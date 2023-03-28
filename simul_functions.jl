@@ -4,17 +4,14 @@ include("station_functions.jl")
 include("utility_functions.jl")
 
 function spawn_commuter!(;time, metro, station)
-	println("time $time: spawning commuter at Station $station")
+	
 	s = metro.stations[station]
 
-	if station == "a"
-		next = "c"
-	elseif station == "b"
-		next = "a"
-	elseif station == "c"
-		next = "a"
-	end
-
+	options = collect(keys(metro.stations))
+	deleteat!(options, findall(x->x==s.station_id,options))
+	
+	next = rand(options)
+	println("time $time: spawning commuter at Station $station that wants to go to $next")
 	new_commuter = Commuter(
 			station,
 			next,
@@ -31,7 +28,6 @@ function spawn_commuter!(;time, metro, station)
 			spawn_commuter!,
 			Dict(
 					:time => new_time,
-					:metro => metro,
 					:station => station
 				)
 		)
@@ -77,10 +73,10 @@ function train_reach_station!(;time, metro, train, station)
 
 	a_count = alight_commuters!(metro, t, s)
 	alight_count = a_count["total"]
-	println("time $time: $alight_count Commuters alighting Train $train at Station $station")
+	println("          : $alight_count Commuters alighting Train $train at Station $station")
 
 	count = board_commuters!(metro, t, s)
-	println("time $time: $count Commuters boardng Train $train at Station $station")
+	println("          : $count Commuters boardng Train $train at Station $station")
 
 	
 	new_time = time + metro.stations[station].train_transit_time
@@ -92,7 +88,6 @@ function train_reach_station!(;time, metro, train, station)
 			terminate_commuters!,
 			Dict(
 					:time => new_time,
-					:metro => metro,
 					:station => station,
 				)
 		)
@@ -105,7 +100,6 @@ function train_reach_station!(;time, metro, train, station)
 			train_leave_station!,
 			Dict(
 					:time => new_time,
-					:metro => metro,
 					:train => train,
 					:station => station
 				)
@@ -145,7 +139,6 @@ function train_leave_station!(;time, metro, train, station)
 			train_reach_station!,
 			Dict(
 					:time => new_time,
-					:metro => metro,
 					:train => train,
 					:station => next_station[1]
 				)
@@ -160,7 +153,7 @@ function simulate!(max_time, metro, event_queue)
 		# release the most recent event
 		curr_event = heappop!(event_queue)
 		# do whatever the event requires
-		new_events = curr_event.fun(;curr_event.params...)
+		new_events = curr_event.fun(;curr_event.params..., metro=metro)
 		# update and add the new events generated
 		for i in new_events
 			heappush!(event_queue, i)
