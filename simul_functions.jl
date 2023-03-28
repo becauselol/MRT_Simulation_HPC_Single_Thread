@@ -1,5 +1,7 @@
 # all functions return a new event function
 # The new event function adds all the events into the queue
+include("station_functions.jl")
+include("utility_functions.jl")
 
 function spawn_commuter!(;time, metro, station)
 	println("time $time: spawning commuter at Station $station")
@@ -15,12 +17,13 @@ function spawn_commuter!(;time, metro, station)
 
 	new_commuter = Commuter(
 			station,
-			station * "_" * next,
+			next,
 			true,
 			time,
 			time
 		)
-	push!(s.commuters, new_commuter)
+
+	add_commuter_to_station!(metro, s, new_commuter)
 
 	new_time = time + s.spawn_rate
 	next_spawn_event = Event(
@@ -36,11 +39,67 @@ function spawn_commuter!(;time, metro, station)
 	return [next_spawn_event]
 end
 
+function terminate_commuters!(;time, metro, station)
+	s = metro.stations[station]
+
+	count = remove_commuter_from_station!(metro, s)
+	println("time $time: removing $count commuters from Station $station")
+
+	return []
+end
+
 function train_reach_station!(;time, metro, train, station)
-	# board passengers
+	events = []
+	t = metro.trains[train]
+	s = metro.stations[station]
+
+	line = t.line
+	direction = t.direction 
+
+	line_direction = line * "_" * direction
+
+	# we need to change direction here so people know to board
+	next_station = get(s.neighbours, line_direction, nothing)
+	# changes direction
+	if next_station == nothing
+		if direction == "fw"
+			direction = "bw"
+		else 
+			direction = "fw"
+		end
+
+		line_direction = line * "_" * direction
+		t.direction = direction
+	end
+
+	# alight and board passengers
 	println("time $time: Train $train reaching Station $station")
 
+	a_count = alight_commuters!(metro, t, s)
+	alight_count = a_count["total"]
+	println("time $time: $alight_count Commuters alighting Train $train at Station $station")
+
+	count = board_commuters!(metro, t, s)
+	println("time $time: $count Commuters boardng Train $train at Station $station")
+
+	
 	new_time = time + metro.stations[station].train_transit_time
+
+	# if any terminating passengers
+	if a_count["terminating"] > 0
+		terminate_commuters = Event(
+			time,
+			terminate_commuters!,
+			Dict(
+					:time => new_time,
+					:metro => metro,
+					:station => station,
+				)
+		)
+		push!(events, terminate_commuters)
+	end
+
+	# create leave station event
 	leave_station_event = Event(
 			new_time,
 			train_leave_station!,
@@ -51,8 +110,8 @@ function train_reach_station!(;time, metro, train, station)
 					:station => station
 				)
 		)
-
-	return [leave_station_event]
+	push!(events, leave_station_event)
+	return events
 end
 
 function train_leave_station!(;time, metro, train, station)
@@ -97,9 +156,6 @@ end
 
 
 function simulate!(max_time, metro, event_queue)
-	for i in event_queue
-		println(i)
-	end
 	while event_queue[1].time < max_time
 		# release the most recent event
 		curr_event = heappop!(event_queue)
@@ -109,8 +165,5 @@ function simulate!(max_time, metro, event_queue)
 		for i in new_events
 			heappush!(event_queue, i)
 		end
-	end
-	for i in event_queue
-		println(i)
 	end
 end

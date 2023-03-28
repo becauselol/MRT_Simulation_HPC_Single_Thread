@@ -2,7 +2,7 @@
 # Create a simple graph and have 1 train 1 line and low spawn rate per line
 ###
 
-include("functions.jl")
+include("simul_functions.jl")
 include("classes.jl")
 include("heap_functions.jl")
 
@@ -10,16 +10,16 @@ max_time = 20
 
 # Define a few variables
 a_neighbour = Dict("l_fw" => ["b", 1])
-station_a = Station("a", ["l"], "Station A", 6, 0, a_neighbour, 2, [], [])
+station_a = Station("a", ["l"], "Station A", 6, 0, a_neighbour, 2, Dict(), [])
 
 
 b_neighbour = Dict("l_fw" => ["c", 2], "l_bw" => ["a", 1])
-station_b = Station("b", ["l"], "Station B", 6, 1, b_neighbour, 2, [], [])
+station_b = Station("b", ["l"], "Station B", 6, 1, b_neighbour, 2, Dict(), [])
 
 c_neighbour = Dict("l_bw" => ["b", 2])
-station_c = Station("c", ["l"], "Station C", 6, 2, c_neighbour, 2, [], [])
+station_c = Station("c", ["l"], "Station C", 6, 2, c_neighbour, 2, Dict(), [])
 
-train = Train("1", "l", "fw", false, 2, [])
+train = Train("1", "l", "fw", false, 2, Dict())
 
 
 stations = Dict(
@@ -38,12 +38,30 @@ lines = Dict(
 	)
 
 paths = Dict(
-		"a_b" => [["b", "l_fw"]],
-		"a_c" => [["c", "l_fw"]],
-		"b_a" => [["a", "l_bw"]],
-		"b_c" => [["c", "l_fw"]],
-		"c_a" => [["a", "l_bw"]],
-		"c_b" => [["b", "l_bw"]],
+		"a" => Dict(
+			"b" => Dict(
+				"board" => "l_fw",
+				"alight" => "b"),
+			"c" => Dict(
+				"board" => "l_fw",
+				"alight" => "c")
+			),
+		"b" => Dict(
+			"a" => Dict(
+				"board" => "l_bw",
+				"alight" => "a"),
+			"c" => Dict(
+				"board" => "l_fw",
+				"alight" => "c")
+			),
+		"c" => Dict(
+			"a" => Dict(
+				"board" => "l_bw",
+				"alight" => "a"),
+			"b" => Dict(
+				"board" => "l_bw",
+				"alight" => "b")
+			)
 	)
 metro = Metro(stations, trains, lines, paths)
 
