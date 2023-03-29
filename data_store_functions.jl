@@ -25,22 +25,26 @@ end
 mutable struct Data_Store
 	wait_times::Dict{String, Vector{Int64}}
 	travel_times::Dict{String, Dict{String, Vector{Int64}}}
-	station_commuter_count::Dict{String, Vector{Station_Commuter_Count}}
-	station_train_commuter_count::Dict{String, Vector{Train_Commuter_Count}}
+	station_commuter_count::Dict{String, DataFrame}
+	station_train_commuter_count::Dict{String, DataFrame}
 end
 
 function update_train_count!(data_store, update)
+	update_df = DataFrame(time=update.time, event=update.event, count=update.count)
 	if !haskey(data_store.station_train_commuter_count, update.station_id)
-		data_store.station_train_commuter_count[update.station_id] = []
+		data_store.station_train_commuter_count[update.station_id] = update_df
+		return
 	end
-	push!(data_store.station_train_commuter_count[update.station_id], update)
+	append!(data_store.station_train_commuter_count[update.station_id], update_df)
 end
 
 function update_station_count!(data_store, update)
+	update_df = DataFrame(time=update.time, event=update.event, count=update.count)
 	if !haskey(data_store.station_commuter_count, update.station_id)
-		data_store.station_commuter_count[update.station_id] = []
+		data_store.station_commuter_count[update.station_id] = update_df
+		return
 	end
-	push!(data_store.station_commuter_count[update.station_id], update)
+	append!(data_store.station_commuter_count[update.station_id], update_df)
 end
 
 function update_travel_time!(data_store, update)

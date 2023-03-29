@@ -2,6 +2,7 @@
 # Create a simple graph and have 1 train 1 line and low spawn rate per line
 ###
 using Logging
+using Plots, DataFrames, StatsPlots
 
 include("simul_functions.jl")
 include("classes.jl")
@@ -15,6 +16,8 @@ logger = ConsoleLogger(stderr, Logging.Debug)
 global_logger(logger)
 
 max_time = 10
+
+save_path = "data/graphs/"
 
 # Define a few variables
 a_neighbour = Dict("l_fw" => ["b", 1])
@@ -136,22 +139,22 @@ for (origin, v) in final_data.travel_times
 	end 
 end 
 
-for (k, v) in final_data.station_commuter_count
-	println("commuter count for station $k")
-	new = []
-	for count in v
-		push!(new, count.count)
-	end
-	println(new)
+for (k,v) in final_data.station_commuter_count
+    println("Station $k")
+    display(v)
+
+    p = @df v plot(:time, [:count], linetype=:steppost, markers=(:circle,5))
+
+    @df v annotate!(:time, :count.+0.03, text.(:event, :red, :left,5))
+    savefig(p, save_path*"station_"*k*"_count.png")
 end
 
-for (k, v) in final_data.station_train_commuter_count
-	println("commuter count for trains at station $k")
-	new = []
-	for count in v
-		push!(new, count.count)
-	end
-	println(new)
-end
+for (k,v) in final_data.station_train_commuter_count
+    println("Station $k")
+    display(v)
 
-# close(io)
+    p = @df v plot(:time, [:count], linetype=:steppost, markers=(:circle,5))
+
+    @df v annotate!(:time, :count.+0.03, text.(:event, :red, :left,5))
+    savefig(p, save_path*"station_train_"*k*"_count.png")
+end
