@@ -1,12 +1,20 @@
 ###
 # Create a simple graph and have 1 train 1 line and low spawn rate per line
 ###
+using Logging
 
 include("simul_functions.jl")
 include("classes.jl")
 include("heap_functions.jl")
 
-max_time = 20
+# io = open("log.txt", "w+")
+# logger = SimpleLogger(io)
+logger = ConsoleLogger(stderr, Logging.Debug)
+# fileLogger = SimpleLogger(io, Logging.Debug)
+# global_logger(fileLogger)
+global_logger(logger)
+
+max_time = 10
 
 # Define a few variables
 a_neighbour = Dict("l_fw" => ["b", 1])
@@ -145,3 +153,5 @@ for (k, v) in final_data.station_train_commuter_count
 	end
 	println(new)
 end
+
+# close(io)

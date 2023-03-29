@@ -31,6 +31,8 @@ function remove_commuter_from_station!(time, metro, station)
 		push!(travel_time_update.update[origin], travel_time)
 	end
 
+	@debug "time $time: terminating $(size(station.commuters["terminating"])[1]) commuters at Station $(station.station_id)"
+
 	station.commuters["terminating"] = []
 
 	station_count = Station_Commuter_Count(station.station_id, time, "post_terminate", get_number_commuters(station))
@@ -53,6 +55,7 @@ function board_commuters!(time, metro, train, station)
 		station.commuters[line_direction] = []
 	end
 
+	board_count = 0
 	while get_number_commuters(train) < train.capacity && size(station.commuters[line_direction])[1] > 0
 		commuter = popfirst!(station.commuters[line_direction])
 
@@ -68,7 +71,11 @@ function board_commuters!(time, metro, train, station)
 		end
 		# board the commuter
 		push!(train.commuters[chosen_path["alight"]], commuter)
+
+		board_count += 1
 	end
+
+	@debug "time $time: $board_count Commuters boarding Train $(train.train_id) at Station $(station.station_id)"
 
 	station_count = Station_Commuter_Count(station.station_id, time, "post_board", get_number_commuters(station))
 
@@ -81,6 +88,8 @@ end
 
 function alight_commuters!(time, metro, train, station)
 	train_count = Train_Commuter_Count(station.station_id, time, "pre_alight", get_number_commuters(train))
+
+	alight_count = 0
 
 	if !haskey(train.commuters, station.station_id)
 		train.commuters[station.station_id] = []
@@ -98,8 +107,11 @@ function alight_commuters!(time, metro, train, station)
 
  			continue
 		end
+		alight_count += 1
 	end
 
+	@debug "time $time: $alight_count Commuters alighting Train $(train.train_id) at Station $(station.station_id)"
+	
 	station_count = Station_Commuter_Count(station.station_id, time, "post_alight", get_number_commuters(station))
 
 	return Dict(

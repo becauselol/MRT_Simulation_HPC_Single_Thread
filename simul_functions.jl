@@ -12,7 +12,7 @@ function spawn_commuter!(;time, metro, station)
 	deleteat!(options, findall(x->x==s.station_id,options))
 	
 	next = rand(options)
-	println("time $time: spawning commuter at Station $station that wants to go to $next")
+	@debug "time $time: spawning commuter at Station $station that wants to go to $next"
 	new_commuter = Commuter(
 			station,
 			next,
@@ -41,9 +41,9 @@ end
 
 function terminate_commuters!(;time, metro, station)
 	s = metro.stations[station]
-
+	
 	data_update = remove_commuter_from_station!(time, metro, s)
-
+	
 	return Dict(
 			"data_store" => data_update
 		)
@@ -74,7 +74,7 @@ function train_reach_station!(;time, metro, train, station)
 	end
 
 	# alight and board passengers
-	println("time $time: Train $train reaching Station $station")
+	@debug "time $time: Train $train reaching Station $station"
 
 	data_update = alight_commuters!(time, metro, t, s)
 	
@@ -111,7 +111,7 @@ function train_reach_station!(;time, metro, train, station)
 end
 
 function train_leave_station!(;time, metro, train, station)
-	println("time $time: Train $train leaving  Station $station")
+	@debug "time $time: Train $train leaving  Station $station"
 	t = metro.trains[train]
 	s = metro.stations[station]
 
