@@ -7,6 +7,7 @@ using Plots, DataFrames, StatsPlots
 include("simul_functions.jl")
 include("classes.jl")
 include("heap_functions.jl")
+include("hdf5_functions.jl")
 
 # io = open("log.txt", "w+")
 # logger = SimpleLogger(io)
@@ -15,7 +16,7 @@ logger = ConsoleLogger(stderr, Logging.Debug)
 # global_logger(fileLogger)
 global_logger(logger)
 
-max_time = 10
+max_time = 100
 
 save_path = "data/graphs/"
 
@@ -127,34 +128,37 @@ data_store = Data_Store(Dict(), Dict(), Dict(), Dict())
 
 final_data = simulate!(max_time, metro, event_queue, data_store)
 
-for (k, v) in final_data.wait_times
-	println("wait times for station $k")
-	println(v)
-end
+store_final_data(final_data, max_time)
 
-for (origin, v) in final_data.travel_times
-	for (dest, arr) in v 
-		println("travel times from station $origin to station $dest")
-		println(arr)
-	end 
-end 
 
-for (k,v) in final_data.station_commuter_count
-    println("Station $k")
-    display(v)
+# for (k, v) in final_data.wait_times
+# 	println("wait times for station $k")
+# 	println(v)
+# end
 
-    p = @df v plot(:time, [:count], linetype=:steppost, markers=(:circle,5))
+# for (origin, v) in final_data.travel_times
+# 	for (dest, arr) in v 
+# 		println("travel times from station $origin to station $dest")
+# 		println(arr)
+# 	end 
+# end 
 
-    @df v annotate!(:time, :count.+0.03, text.(:event, :red, :left,5))
-    savefig(p, save_path*"station_"*k*"_count.png")
-end
+# for (k,v) in final_data.station_commuter_count
+#     println("Station $k")
+#     # display(v)
 
-for (k,v) in final_data.station_train_commuter_count
-    println("Station $k")
-    display(v)
+#     p = @df v plot(:time, [:count], linetype=:steppost, markers=(:circle,2))
 
-    p = @df v plot(:time, [:count], linetype=:steppost, markers=(:circle,5))
+#     # @df v annotate!(:time, :count.+0.03, text.(:event, :red, :left,5))
+#     savefig(p, save_path*"station_"*k*"_count.png")
+# end
 
-    @df v annotate!(:time, :count.+0.03, text.(:event, :red, :left,5))
-    savefig(p, save_path*"station_train_"*k*"_count.png")
-end
+# for (k,v) in final_data.station_train_commuter_count
+#     println("Station $k")
+#     # display(v)
+
+#     p = @df v plot(:time, [:count], linetype=:steppost, markers=(:circle,2))
+
+#     # @df v annotate!(:time, :count.+0.03, text.(:event, :red, :left,5))
+#     savefig(p, save_path*"station_train_"*k*"_count.png")
+# end

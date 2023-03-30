@@ -83,7 +83,7 @@ function train_reach_station!(;time, metro, train, station)
 	# if any terminating passengers
 	if size(s.commuters["terminating"])[1] > 0
 		terminate_commuters = Event(
-			time,
+			new_time,
 			terminate_commuters!,
 			Dict(
 					:time => new_time,
