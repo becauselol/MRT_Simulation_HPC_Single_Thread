@@ -22,24 +22,21 @@ station_data = """Station 1,red01
 Station 2,red02/pur02
 Station 3,red03/pur03
 Station 4,pur01
-Station 5,pur04
-"""
+Station 5,pur04"""
 
 travel_data_red = """red01,red02,2
-red02,red03,2
-"""
+red02,red03,2"""
 
 travel_data_pur = """pur01,pur02,2
 pur02,pur03,2
-pur03,pur04,2
-"""
+pur03,pur04,2"""
 
+# not being used at the moment
 train_wait_time = """red01,1
 red02,1
 red03,1
 pur01,1
-pur04,1
-"""
+pur04,1"""
 
 trainPeriod = 1
 trainCapacity = 150

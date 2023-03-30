@@ -26,12 +26,26 @@ mutable struct Station
 	station_id::String
 	codes::Vector
 	name::String
-	spawn_rate::Int64
-	time_to_next_spawn::Int64
-	neighbours::Dict{String, Vector}
+	stationCodes::Vector{String}
+	spawn_rate::Dict{String, Float64}
+	time_to_next_spawn::Dict{String, Int64}
+	neighbours::Dict{String, Dict{String, Vector}}
 	train_transit_time::Int64
-	commuters::Dict{String, Vector{Commuter}} # Dictionary, key: train to board, valu: List of commuters
-	commuter_wait_times::Vector
+	commuters::Dict{String, Vector{Any}} # Dictionary, key: train to board, valu: List of commuters
+
+	function Station(station_id::String, codes::Vector{Any}, name::String, stationCodes::Vector{Any})
+		return new(
+				station_id,
+				codes,
+				name,
+				stationCodes,
+				Dict(),
+				Dict(),
+				Dict(),
+				1,
+				Dict()
+			)
+	end
 end
 
 mutable struct Metro
@@ -39,6 +53,14 @@ mutable struct Metro
 	trains::Dict{String, Train}
 	lines::Dict{String, Vector}
 	paths::Dict{String, Dict{Any, Any}}
+	function Metro()
+		return new(
+				Dict(),
+				Dict(),
+				Dict(),
+				Dict()
+			)
+	end
 end
 
 # mutable struct CommuterNode
