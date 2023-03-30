@@ -10,6 +10,7 @@ mutable struct Commuter
 	state::Bool # state of commuter (True means waiting false means moving)
 	spawn_time::Int64 # time it was spawned at
 	wait_start::Int64 # time it started waiting for the next train
+	total_wait_time::Int64 # total time the commuter spent waiting
 end
 
 mutable struct Train

@@ -11,14 +11,45 @@ include("hdf5_functions.jl")
 
 # io = open("log.txt", "w+")
 # logger = SimpleLogger(io)
-logger = ConsoleLogger(stderr, Logging.Debug)
+logger = ConsoleLogger(stderr, Logging.Info)
 # fileLogger = SimpleLogger(io, Logging.Debug)
 # global_logger(fileLogger)
 global_logger(logger)
 
-max_time = 100
+max_time = 10000
 
-save_path = "data/graphs/"
+station_data = """Station 1,red01
+Station 2,red02/pur02
+Station 3,red03/pur03
+Station 4,pur01
+Station 5,pur04
+"""
+
+travel_data_red = """red01,red02,2
+red02,red03,2
+"""
+
+travel_data_pur = """pur01,pur02,2
+pur02,pur03,2
+pur03,pur04,2
+"""
+
+train_wait_time = """red01,1
+red02,1
+red03,1
+pur01,1
+pur04,1
+"""
+
+trainPeriod = 1
+trainCapacity = 150
+
+spawn_labels = ["Station 1", "Station 2", "Station 3", "Station 4", "Station 5"]
+spawn_rates = [0 2 2 2 2;
+1 0 1 1 1;
+3 3 0 3 3;
+1 1 1 0 1;
+1 1 1 1 0]
 
 # Define a few variables
 a_neighbour = Dict("l_fw" => ["b", 1])
@@ -124,7 +155,7 @@ heappush!(event_queue, spawn_event_a)
 heappush!(event_queue, spawn_event_b)
 heappush!(event_queue, spawn_event_c)
 
-data_store = Data_Store(Dict(), Dict(), Dict(), Dict())
+data_store = Data_Store(Dict(), Dict(), Dict(), Dict(), Dict())
 
 final_data = simulate!(max_time, metro, event_queue, data_store)
 

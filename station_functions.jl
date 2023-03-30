@@ -14,7 +14,8 @@ function add_commuter_to_station!(time, metro, station, commuter)
 end
 
 function remove_commuter_from_station!(time, metro, station)
-	travel_time_update = Travel_Time_Update(station.station_id, Dict())
+	travel_time_update = Inter_Station_Time_Update(station.station_id, Dict())
+	perc_wait_time_update = Inter_Station_Time_Update(station.station_id, Dict())
 	
 	if !haskey(station.commuters, "terminating")
 		station.commuters["terminating"] = []
@@ -25,10 +26,18 @@ function remove_commuter_from_station!(time, metro, station)
 		origin = commuter.origin
 
 		travel_time = time - commuter.spawn_time
+
 		if !haskey(travel_time_update.update, origin)
 			travel_time_update.update[origin] = []
 		end
 		push!(travel_time_update.update[origin], travel_time)
+
+		perc_wait = round(commuter.total_wait_time/travel_time, digits=2)
+
+		if !haskey(perc_wait_time_update.update, origin)
+			perc_wait_time_update.update[origin] = []
+		end
+		push!(perc_wait_time_update.update[origin], perc_wait)
 	end
 
 	@debug "time $time: terminating $(size(station.commuters["terminating"])[1]) commuters at Station $(station.station_id)"
@@ -39,6 +48,7 @@ function remove_commuter_from_station!(time, metro, station)
 
 	return Dict(
 			"travel_time" => travel_time_update,
+			"perc_wait_time" => perc_wait_time_update,
 			"station_count" => station_count
 		)
 end
@@ -62,6 +72,9 @@ function board_commuters!(time, metro, train, station)
 		# update the wait_time_update
 		wait_time = time - commuter.wait_start
 		push!(wait_time_update.update, wait_time)
+
+		# add to commuters wait time
+		commuter.total_wait_time += wait_time
 
 		# find the path it needs to go
 		chosen_path = metro.paths[station.station_id][commuter.target]

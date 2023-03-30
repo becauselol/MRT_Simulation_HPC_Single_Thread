@@ -18,7 +18,8 @@ function spawn_commuter!(;time, metro, station)
 			next,
 			true,
 			time,
-			time
+			time,
+			0
 		)
 
 	data_update = add_commuter_to_station!(time, metro, s, new_commuter)
@@ -160,7 +161,8 @@ function simulate!(max_time, metro, event_queue, data_store)
 			"train_count" => update_train_count!,
 			"station_count" => update_station_count!,
 			"travel_time" => update_travel_time!,
-			"wait_time" => update_wait_time!
+			"wait_time" => update_wait_time!,
+			"perc_wait_time" => update_perc_wait_time!
 		)
 
 	while event_queue[1].time < max_time
