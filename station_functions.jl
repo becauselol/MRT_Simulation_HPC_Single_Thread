@@ -1,3 +1,12 @@
+function getNeighbourId(station, line_code, direction)
+	values = get(station.neighbours[line_code], direction, nothing)
+	if values == nothing
+		return nothing
+	end 
+	return values[1]
+end
+
+
 function add_commuter_to_station!(time, metro, station, commuter)
 
 	chosen_path = metro.paths[station.station_id][commuter.target]

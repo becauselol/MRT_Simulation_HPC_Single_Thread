@@ -5,6 +5,7 @@ using Logging
 using Plots, DataFrames, StatsPlots
 
 include("simul_functions.jl")
+include("construction_functions.jl")
 include("classes.jl")
 include("heap_functions.jl")
 include("hdf5_functions.jl")
@@ -24,12 +25,13 @@ Station 3,red03/pur03
 Station 4,pur01
 Station 5,pur04"""
 
-travel_data_red = """red01,red02,2
-red02,red03,2"""
-
-travel_data_pur = """pur01,pur02,2
+travel_data = Dict(
+	"pur" => """pur01,pur02,2
 pur02,pur03,2
-pur03,pur04,2"""
+pur03,pur04,2""",
+	"red" => """red01,red02,2
+red02,red03,2"""
+	)
 
 # not being used at the moment
 train_wait_time = """red01,1
@@ -48,33 +50,18 @@ spawn_rates = [0 2 2 2 2;
 1 1 1 0 1;
 1 1 1 1 0]
 
-# Define a few variables
-a_neighbour = Dict("l_fw" => ["b", 1])
-station_a = Station("a", ["l"], "Station A", 6, 0, a_neighbour, 2, Dict(), [])
+station_dict = construct_station_dict(station_data)
 
+# construct the edges
+start_stations = construct_edges_from_edges_dict!(station_dict, travel_data)
 
-b_neighbour = Dict("l_fw" => ["c", 2], "l_bw" => ["a", 1])
-station_b = Station("b", ["l"], "Station B", 6, 1, b_neighbour, 2, Dict(), [])
-
-c_neighbour = Dict("l_bw" => ["b", 2])
-station_c = Station("c", ["l"], "Station C", 6, 2, c_neighbour, 2, Dict(), [])
+lines = construct_lines_from_start_stations(station_dict, start_stations)
 
 train = Train("1", "l", "fw", false, 5, Dict())
 
 
-stations = Dict(
-		"a" => station_a,
-		"b" => station_b,
-		"c" => station_c
-	)
-
 trains = Dict(
 		"1" => train
-	)
-
-lines = Dict(
-		"l_fw" => ["a", "b", "c"],
-		"l_bw" => ["c", "b", "a"]
 	)
 
 paths = Dict(

@@ -58,10 +58,10 @@ function train_reach_station!(;time, metro, train, station)
 	line = t.line
 	direction = t.direction 
 
-	line_direction = line * "_" * direction
-
 	# we need to change direction here so people know to board
-	next_station = get(s.neighbours, line_direction, nothing)
+	line_dict = get(s.neighbours, line, nothing)
+	next_station = get(line_dict, direction, nothing)
+
 	# changes direction
 	if next_station == nothing
 		if direction == "fw"
@@ -70,7 +70,6 @@ function train_reach_station!(;time, metro, train, station)
 			direction = "fw"
 		end
 
-		line_direction = line * "_" * direction
 		t.direction = direction
 	end
 
@@ -119,9 +118,9 @@ function train_leave_station!(;time, metro, train, station)
 	line = t.line
 	direction = t.direction 
 
-	line_direction = line * "_" * direction
+	line_dict = get(s.neighbours, line, nothing)
 
-	next_station = get(s.neighbours, line_direction, nothing)
+	next_station = get(line_dict, direction, nothing)
 	# changes direction
 	if next_station == nothing
 		if direction == "fw"
@@ -130,10 +129,10 @@ function train_leave_station!(;time, metro, train, station)
 			direction = "fw"
 		end
 
-		line_direction = line * "_" * direction
 		t.direction = direction
 
-		next_station = get(s.neighbours, line_direction, nothing)
+		next_station = get(line_dict, direction, nothing)
+
 	end
 
 	data_update = board_commuters!(time, metro, t, s)
