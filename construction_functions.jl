@@ -112,3 +112,34 @@ function construct_lines_from_start_stations(station_dict, start_stations)
 
 	return lines
 end
+
+
+function construct_commuter_graph(station_dict)
+	commuter_edge_dict = Dict()
+	commuter_node_list = []
+
+	for (station_id, station) in station_dict 
+		for code in station.codes
+			push!(commuter_node_list, "$(station_id).$(code)")
+			commuter_edge_dict["$(station_id).$(code)"] = Dict()
+		end 
+
+		for iCode in station.codes
+			for jCode in station.codes
+				if iCode == jCode
+					continue
+				end 
+
+				commuter_edge_dict["$(station_id).$(iCode)"]["$(station_id).$(jCode)"] = 0.1
+			end 
+		end 
+
+		for (line, line_dict) in station.neighbours
+			for (direction, values) in line_dict 
+				commuter_edge_dict["$(station_id).$(line)"]["$(values[1]).$(line)"] = values[2] + station.train_transit_time
+			end 	
+		end 
+	end 
+
+	return CommuterGraph(commuter_node_list, commuter_edge_dict)
+end 

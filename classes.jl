@@ -63,10 +63,23 @@ mutable struct Metro
 	end
 end
 
-# mutable struct CommuterNode
 
-# mutable struct CommuterGraph
-# 	nodes::Dict{String, CommuterNode}
+mutable struct CommuterGraph
+	nodes::Vector{Any}
+	edges::Dict{Any, Any}
+	dist::Dict{String, Dict{String, Float64}}
+	next::Dict{String, Dict{String, Vector}}
+	commuter_paths::Dict{String, Dict{String, Vector}}
+	function CommuterGraph(nodes::Vector{Any}, edges::Dict{Any, Any})
+		return new(
+			nodes,
+			edges,
+			Dict(),
+			Dict(),
+			Dict()
+			)
+    end
+end
 
 
 
