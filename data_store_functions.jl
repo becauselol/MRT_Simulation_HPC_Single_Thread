@@ -1,20 +1,20 @@
 struct Station_Commuter_Count
 	station_id::String 
-	time::Int64
+	time::Float64
 	event::String
-	count::Int64
+	count::Float64
 end
 
 struct Train_Commuter_Count
 	station_id::String 
-	time::Int64
+	time::Float64
 	event::String
-	count::Int64
+	count::Float64
 end
 
 struct Wait_Time_Update
 	station_id::String
-	update::Vector{Int64}
+	update::Vector{Float64}
 end
 
 struct Inter_Station_Time_Update
@@ -23,9 +23,9 @@ struct Inter_Station_Time_Update
 end
 
 mutable struct Data_Store
-	wait_times::Dict{String, Vector{Int64}}
+	wait_times::Dict{String, Vector{Float64}}
 	percentage_wait_time::Dict{String, Dict{String, Vector{Float64}}}
-	travel_times::Dict{String, Dict{String, Vector{Int64}}}
+	travel_times::Dict{String, Dict{String, Vector{Float64}}}
 	station_commuter_count::Dict{String, DataFrame}
 	station_train_commuter_count::Dict{String, DataFrame}
 end

@@ -2,23 +2,26 @@
 # Create a simple graph and have 1 train 1 line and low spawn rate per line
 ###
 using Logging
-using Plots, DataFrames, StatsPlots
+using DataFrames, StatsPlots, Distributions
 
 include("simul_functions.jl")
 include("construction_functions.jl")
+include("station_functions.jl")
+include("train_functions.jl")
+include("pathfinding_functions.jl")
+include("commuter_functions.jl")
 include("classes.jl")
 include("heap_functions.jl")
 include("hdf5_functions.jl")
 
 # io = open("log.txt", "w+")
 # logger = SimpleLogger(io)
-logger = ConsoleLogger(stderr, Logging.Info)
+logger = ConsoleLogger(stderr, Logging.Debug)
 # fileLogger = SimpleLogger(io, Logging.Debug)
 # global_logger(fileLogger)
 global_logger(logger)
 
-max_time = 10000
-
+max_time = 100
 station_data = """Station 1,red01
 Station 2,red02/pur02
 Station 3,red03/pur03
@@ -46,98 +49,48 @@ trainCapacity = 150
 spawn_labels = ["Station 1", "Station 2", "Station 3", "Station 4", "Station 5"]
 spawn_rates = [0 2 2 2 2;
 1 0 1 1 1;
-3 3 0 3 3;
+2 2 0 2 2;
 1 1 1 0 1;
 1 1 1 1 0]
 
 station_dict = construct_station_dict(station_data)
+
+station_name_id_map = construct_station_name_id_map(station_dict)
 
 # construct the edges
 start_stations = construct_edges_from_edges_dict!(station_dict, travel_data)
 
 lines = construct_lines_from_start_stations(station_dict, start_stations)
 
-train = Train("1", "l", "fw", false, 5, Dict())
+commuter_graph = construct_commuter_graph(station_dict)
 
+floyd_warshall!(commuter_graph)
 
-trains = Dict(
-		"1" => train
-	)
+get_all_path_pairs!(commuter_graph)
 
-paths = Dict(
-		"a" => Dict(
-			"b" => Dict(
-				"board" => "l_fw",
-				"alight" => "b"),
-			"c" => Dict(
-				"board" => "l_fw",
-				"alight" => "c")
-			),
-		"b" => Dict(
-			"a" => Dict(
-				"board" => "l_bw",
-				"alight" => "a"),
-			"c" => Dict(
-				"board" => "l_fw",
-				"alight" => "c")
-			),
-		"c" => Dict(
-			"a" => Dict(
-				"board" => "l_bw",
-				"alight" => "a"),
-			"b" => Dict(
-				"board" => "l_bw",
-				"alight" => "b")
-			)
-	)
-metro = Metro(stations, trains, lines, paths)
+paths = get_interchange_paths(station_dict, lines, commuter_graph)
 
-
-# Start the Event queue
+trains = Dict()
 event_queue = []
-first_event = Event(
-		0,
-		train_reach_station!,
-		Dict(
-				:time => 0,
-				:train => "1",
-				:station => "a"
-			)
-	)
+for line_code in keys(lines)
+	line_duration = get_line_duration(station_dict, lines, line_code)
+	depot_id = lines[line_code]["FW"][1]
+	result = create_period_train_placement_events(line_code, line_duration, 2, 1000, depot_id)
 
-spawn_event_a = Event(
-		0,
-		spawn_commuter!,
-		Dict(
-				:time => 0,
-				:station => "a"
-			)
+	for (k,v) in result["trains"]
+		trains[k] = v 
+	end 
 
-	)
+	append!(event_queue, result["events"])
+end
 
-spawn_event_b = Event(
-		1,
-		spawn_commuter!,
-		Dict(
-				:time => 1,
-				:station => "b"
-			)
+spawn_events = create_spawn_events(spawn_labels, spawn_rates, station_name_id_map)
 
-	)
+append!(event_queue, spawn_events)
 
-spawn_event_c = Event(
-		2,
-		spawn_commuter!,
-		Dict(
-				:time => 2,
-				:station => "c"
-			)
+metro = Metro(station_dict, trains, lines, paths);
 
-	)
-heappush!(event_queue, first_event)
-heappush!(event_queue, spawn_event_a)
-heappush!(event_queue, spawn_event_b)
-heappush!(event_queue, spawn_event_c)
+build_min_heap!(event_queue)
 
 data_store = Data_Store(Dict(), Dict(), Dict(), Dict(), Dict())
 

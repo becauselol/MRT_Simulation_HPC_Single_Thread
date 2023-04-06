@@ -4,18 +4,14 @@ include("station_functions.jl")
 include("utility_functions.jl")
 include("data_store_functions.jl")
 
-function spawn_commuter!(;time, metro, station)
+function spawn_commuter!(;time, metro, rate, station, target)
 	
 	s = metro.stations[station]
 
-	options = collect(keys(metro.stations))
-	deleteat!(options, findall(x->x==s.station_id,options))
-	
-	next = rand(options)
-	@debug "time $time: spawning commuter at Station $station that wants to go to $next"
+	@debug "time $(round(time; digits=2)): spawning commuter at Station $station that wants to go to $target"
 	new_commuter = Commuter(
 			station,
-			next,
+			target,
 			true,
 			time,
 			time,
@@ -24,13 +20,15 @@ function spawn_commuter!(;time, metro, station)
 
 	data_update = add_commuter_to_station!(time, metro, s, new_commuter)
 
-	new_time = time + s.spawn_rate
+	new_time = time + rand(Exponential(rate), 1)[1]
 	next_spawn_event = Event(
 			new_time,
 			spawn_commuter!,
 			Dict(
 					:time => new_time,
-					:station => station
+					:rate => rate,
+					:station => station,
+					:target => target
 				)
 		)
 
@@ -64,17 +62,17 @@ function train_reach_station!(;time, metro, train, station)
 
 	# changes direction
 	if next_station == nothing
-		if direction == "fw"
-			direction = "bw"
+		if direction == "FW"
+			direction = "BW"
 		else 
-			direction = "fw"
+			direction = "FW"
 		end
 
 		t.direction = direction
 	end
 
 	# alight and board passengers
-	@debug "time $time: Train $train reaching Station $station"
+	@debug "time $(round(time; digits=2)): Train $train reaching Station $station"
 
 	data_update = alight_commuters!(time, metro, t, s)
 	
@@ -123,10 +121,10 @@ function train_leave_station!(;time, metro, train, station)
 	next_station = get(line_dict, direction, nothing)
 	# changes direction
 	if next_station == nothing
-		if direction == "fw"
-			direction = "bw"
+		if direction == "FW"
+			direction = "BW"
 		else 
-			direction = "fw"
+			direction = "FW"
 		end
 
 		t.direction = direction

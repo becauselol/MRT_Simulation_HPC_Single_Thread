@@ -54,3 +54,11 @@ function heappop!(heap)
 
 	return min_event
 end
+
+function build_min_heap!(heap)
+	start_idx = trunc(Int, size(heap)[1]/2) + 1
+
+	for i = start_idx : -1 : 1
+		min_heapify!(heap, i)
+	end 
+end 

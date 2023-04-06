@@ -1,42 +1,38 @@
-function floyd_warshall!(commuter_graph)
-	commuter_graph.dist = Dict()
-	commuter_graph.next = Dict()
+using Distributions
 
-	for station_id in commuter_graph.nodes 
-		commuter_graph.dist[station_id] = Dict()
-		commuter_graph.next[station_id] = Dict()
+function create_spawn_events(spawn_labels, spawn_rates, station_name_id_map)
+	events = []
 
-		for id in commuter_graph.nodes 
-			commuter_graph.dist[station_id][id] = Inf
-			commuter_graph.next[station_id][id] = [-1]
-		end 
-	end 
-
-	for (i, i_dict) in commuter_graph.edges
-		for (j, weight) in i_dict 
-			commuter_graph.dist[i][j] = weight
-			commuter_graph.next[i][j] = [-1]
-		end 
-	end 
-
-	for i in commuter_graph.nodes 
-		commuter_graph.dist[i][i] = 0
-		commuter_graph.next[i][i] = []
-	end
-
-	for k in commuter_graph.nodes 
-		for i in commuter_graph.nodes 
-			for j in commuter_graph.nodes 
-				if (commuter_graph.dist[i][k] + commuter_graph.dist[k][j] < commuter_graph.dist[i][j])
-					commuter_graph.dist[i][j] = commuter_graph.dist[i][k] + commuter_graph.dist[k][j]
-					commuter_graph.next[i][j] = []
-					push!(commuter_graph.next[i][j], k)
-				elseif commuter_graph.dist[i][k] + commuter_graph.dist[k][j] == commuter_graph.dist[i][j] && k != j && k != i && commuter_graph.dist[i][j] != Inf
-					push!(commuter_graph.next[i][j], k)
-				end
+	for (i, i_name) in enumerate(spawn_labels)
+		for (j, j_name) in enumerate(spawn_labels)
+			if i_name == j_name
+				continue
 			end 
+
+			rate = spawn_rates[i, j]
+
+			if rate == 0
+				continue
+			end
+
+			new_time = rand(Exponential(rate), 1)[1]
+
+			i_id = station_name_id_map[i_name]
+			j_id = station_name_id_map[j_name]
+
+			new_event = Event(
+					new_time,
+					spawn_commuter!,
+					Dict(
+							:time => new_time,
+							:rate => rate,
+							:station => i_id,
+							:target => j_id
+						)
+				)
+			push!(events, new_event)
 		end 
 	end 
 
-	@debug "floyd_warshall done"
+	return events
 end

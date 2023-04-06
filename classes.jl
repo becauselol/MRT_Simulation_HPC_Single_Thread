@@ -1,5 +1,5 @@
 struct Event
-	time::Int64
+	time::Float64
 	fun::Any # the function to execute
 	params::Dict
 end
@@ -8,9 +8,9 @@ mutable struct Commuter
 	origin::String # origin station id
 	target::String # path to take
 	state::Bool # state of commuter (True means waiting false means moving)
-	spawn_time::Int64 # time it was spawned at
-	wait_start::Int64 # time it started waiting for the next train
-	total_wait_time::Int64 # total time the commuter spent waiting
+	spawn_time::Float64 # time it was spawned at
+	wait_start::Float64 # time it started waiting for the next train
+	total_wait_time::Float64 # total time the commuter spent waiting
 end
 
 mutable struct Train
@@ -49,18 +49,10 @@ mutable struct Station
 end
 
 mutable struct Metro
-	stations::Dict{String, Station}
-	trains::Dict{String, Train}
-	lines::Dict{String, Vector}
-	paths::Dict{String, Dict{Any, Any}}
-	function Metro()
-		return new(
-				Dict(),
-				Dict(),
-				Dict(),
-				Dict()
-			)
-	end
+	stations::Dict{Any, Any}
+	trains::Dict{Any, Any}
+	lines::Dict{Any, Any}
+	paths::Dict{Any, Any}
 end
 
 

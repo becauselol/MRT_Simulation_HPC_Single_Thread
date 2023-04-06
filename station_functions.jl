@@ -1,4 +1,4 @@
-function getNeighbourId(station, line_code, direction)
+function get_neighbour_id(station, line_code, direction)
 	values = get(station.neighbours[line_code], direction, nothing)
 	if values == nothing
 		return nothing
@@ -6,14 +6,21 @@ function getNeighbourId(station, line_code, direction)
 	return values[1]
 end
 
+function get_neighbour_weight(station, line_code, direction)
+	values = get(station.neighbours[line_code], direction, nothing)
+	if values == nothing
+		return nothing
+	end 
+	return values[2]
+end
+
 
 function add_commuter_to_station!(time, metro, station, commuter)
-
-	chosen_path = metro.paths[station.station_id][commuter.target]
-	if !haskey(station.commuters, chosen_path["board"])
-		station.commuters[chosen_path["board"]] = []
+	if !haskey(station.commuters, "waiting")
+		station.commuters["waiting"] = []
 	end
-	push!(station.commuters[chosen_path["board"]], commuter)
+
+	push!(station.commuters["waiting"], commuter)
 
 	station_count = Station_Commuter_Count(station.station_id, time, "post_spawn", get_number_commuters(station))
 
@@ -49,7 +56,7 @@ function remove_commuter_from_station!(time, metro, station)
 		push!(perc_wait_time_update.update[origin], perc_wait)
 	end
 
-	@debug "time $time: terminating $(size(station.commuters["terminating"])[1]) commuters at Station $(station.station_id)"
+	@debug "time $(round(time; digits=2)): terminating $(size(station.commuters["terminating"])[1]) commuters at Station $(station.station_id)"
 
 	station.commuters["terminating"] = []
 
@@ -63,7 +70,8 @@ function remove_commuter_from_station!(time, metro, station)
 end
 
 function board_commuters!(time, metro, train, station)
-	train_count = Train_Commuter_Count(station.station_id, time, "pre_board", get_number_commuters(train))
+	train_number = get_number_commuters(train)
+	train_count = Train_Commuter_Count(station.station_id, time, "pre_board", train_number)
 	wait_time_update = Wait_Time_Update(station.station_id, [])
 
 	line = train.line
@@ -75,29 +83,47 @@ function board_commuters!(time, metro, train, station)
 	end
 
 	board_count = 0
-	while get_number_commuters(train) < train.capacity && size(station.commuters[line_direction])[1] > 0
-		commuter = popfirst!(station.commuters[line_direction])
 
-		# update the wait_time_update
+	board_indexes = []
+
+	if !(haskey(station.commuters, "waiting"))
+		station.commuters["waiting"] = []
+		return Dict()
+	end
+
+	for (i, commuter) in enumerate(station.commuters["waiting"])
+		if train_number + board_count > train.capacity
+			break
+		end
+
 		wait_time = time - commuter.wait_start
 		push!(wait_time_update.update, wait_time)
 
 		# add to commuters wait time
 		commuter.total_wait_time += wait_time
 
-		# find the path it needs to go
-		chosen_path = metro.paths[station.station_id][commuter.target]
+		options = keys(metro.paths[station.station_id][commuter.target])
 
-		if !haskey(train.commuters, chosen_path["alight"])
-			train.commuters[chosen_path["alight"]] = []
+		if line_direction in options
+			push!(board_indexes, i)
 		end
-		# board the commuter
-		push!(train.commuters[chosen_path["alight"]], commuter)
-
 		board_count += 1
 	end
+	
+	for i in reverse(board_indexes)
+		commuter = splice!(station.commuters["waiting"], i)
 
-	@debug "time $time: $board_count Commuters boarding Train $(train.train_id) at Station $(station.station_id)"
+		alight_choices = metro.paths[station.station_id][commuter.target][line_direction]
+		choice = rand(alight_choices)
+
+		if !haskey(train.commuters, choice)
+			train.commuters[choice] = []
+		end 
+
+		push!(train.commuters[choice], commuter)
+	end
+
+	@debug "time $(round(time; digits=2)): $board_count Commuters boarding Train $(train.train_id) at Station $(station.station_id)"
 
 	station_count = Station_Commuter_Count(station.station_id, time, "post_board", get_number_commuters(station))
 
@@ -120,19 +146,21 @@ function alight_commuters!(time, metro, train, station)
 	if !haskey(station.commuters, "terminating")
 		station.commuters["terminating"] = []
 	end
+
 	while size(train.commuters[station.station_id])[1] > 0
 		commuter = popfirst!(train.commuters[station.station_id])
 		commuter.wait_start = time
-		if commuter.target == station.station_id
-			
-			push!(station.commuters["terminating"], commuter)
 
- 			continue
+		if commuter.target == station.station_id
+			push!(station.commuters["terminating"], commuter)
+ 		else 
+ 			push!(station.commuters["waiting"], commuter)
 		end
+
 		alight_count += 1
 	end
 
-	@debug "time $time: $alight_count Commuters alighting Train $(train.train_id) at Station $(station.station_id)"
+	@debug "time $(round(time; digits=2)): $alight_count Commuters alighting Train $(train.train_id) at Station $(station.station_id)"
 	
 	station_count = Station_Commuter_Count(station.station_id, time, "post_alight", get_number_commuters(station))
 

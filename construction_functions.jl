@@ -32,6 +32,14 @@ function construct_station_dict(station_string)
 	return station_data
 end
 
+function construct_station_name_id_map(station_dict)
+	name_id_map = Dict()
+	for (station_id, station) in station_dict 
+		name_id_map[station.name] = station_id 
+	end 
+	return name_id_map
+end
+
 function create_station_code_map(station_dict)
 	code_map = Dict()
 	for (station_id, station) in station_dict 
@@ -98,13 +106,13 @@ function construct_lines_from_start_stations(station_dict, start_stations)
 		curr_id = start_station_id
 		curr = station_dict[curr_id]
 
-		next_id = getNeighbourId(curr, line_code, "FW")
+		next_id = get_neighbour_id(curr, line_code, "FW")
 
 		while next_id != nothing
 			next = station_dict[next_id]
 			push!(lines[line_code]["FW"], next_id)
 			curr = next
-			next_id = getNeighbourId(curr, line_code, "FW")
+			next_id = get_neighbour_id(curr, line_code, "FW")
 		end
 
 		lines[line_code]["BW"] = reverse(lines[line_code]["FW"])
