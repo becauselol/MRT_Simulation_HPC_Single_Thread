@@ -11,15 +11,32 @@ function create_spawn_events!(spawn_data_file_path, station_dict, start_spawn_ti
 		if hour == 0
 			continue
 		end
-		from_code = String(row[2])
-		to_code = String(row[3])
+		from_codes = String(row[2])
+		from_code_arr = String.(split(from_codes, "/"))
+		from_id = nothing
+		for code in from_code_arr
+			if haskey(code_map, code)
+				from_id = code_map[code]
+				break
+			end
+		end
+
+
+		to_codes = String(row[3])
+		to_code_arr = String.(split(to_codes, "/"))
+		to_id = nothing
+		for code in to_code_arr
+			if haskey(code_map, code)
+				to_id = code_map[code]
+				break
+			end
+		end
+
 		rate = convert(Float64, (row[4]/60))
 
-		if (!haskey(code_map, from_code) || !haskey(code_map, to_code))
+		if (from_id == nothing || to_id == nothing)
 			continue
 		end
-		from_id = code_map[from_code]
-		to_id = code_map[to_code]
 
 		from_station = station_dict[from_id]
 		if !haskey(from_station.spawn_rate, to_id)
@@ -29,7 +46,7 @@ function create_spawn_events!(spawn_data_file_path, station_dict, start_spawn_ti
 		from_station.spawn_rate[to_id][hour] = rate
 	end
 
-	start_hour = convert(Int32, floor(start_spawn_time/60))
+	start_hour = convert(Int64, floor(start_spawn_time/60))
 
 	for (i_id, i_station) in station_dict
 		for (j_id, j_station) in station_dict
@@ -41,19 +58,34 @@ function create_spawn_events!(spawn_data_file_path, station_dict, start_spawn_ti
 				continue
 			end
 
-			if !haskey(i_station.spawn_rate[j_id], start_hour)
-				station_start_spawn_hour = minimum(keys(i_station.spawn_rate[j_id]))
-				station_start_spawn_time = station_start_spawn_hour * 60
-			else
-				station_start_spawn_hour = start_hour
-				station_start_spawn_time = start_spawn_time
+			new_time = Inf
+			# @info "$station $target"
+
+			for hour in start_hour:23
+				if !haskey(i_station.spawn_rate[j_id], hour)
+					continue
+				end
+				if hour == start_hour	
+					station_start_spawn_time = start_spawn_time
+				else 
+					station_start_spawn_time = hour * 60
+				end
+
+				rate = i_station.spawn_rate[j_id][hour]
+
+				new_time = station_start_spawn_time + rand(Exponential(1/rate), 1)[1]
+
+				if convert(Int64, floor(new_time/60)) <= hour
+					break
+				else
+					new_time = Inf
+					continue 
+				end 
 			end
 
-			rate = i_station.spawn_rate[j_id][station_start_spawn_hour]
-
-			
-
-			new_time = rand(Exponential(1/rate), 1)[1] + station_start_spawn_time
+			if new_time == Inf
+				continue
+			end
 
 			new_event = Event(
 					new_time,

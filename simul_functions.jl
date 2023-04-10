@@ -18,31 +18,38 @@ function spawn_commuter!(;time, metro, station, target)
 			0
 		)
 
-	current_hour = convert(Int32, floor(time/60))
+	start_hour = convert(Int32, floor(time/60))
 
-	if !haskey(s.spawn_rate[target], current_hour)
-		hours = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
-		index = findfirst(==(current_hour), hours)
-		index += 1
-		while index <= size(hours)[1] && !haskey(s.spawn_rate[target], hours[index])
-			index += 1
+	new_time = Inf
+	# @info "$station $target"
+
+	for hour in start_hour:23
+
+		if !haskey(s.spawn_rate[target], hour)
+			continue
 		end
-		if index > size(hours)[1]
-			return Dict()
+		if hour == start_hour	
+			station_start_spawn_time = time
+		else 
+			station_start_spawn_time = hour * 60
 		end
 
-		station_start_spawn_hour = hours[index]
-		station_start_spawn_time = station_start_spawn_hour * 60
-	else
-		station_start_spawn_hour = current_hour
-		station_start_spawn_time = time
+		rate = s.spawn_rate[target][hour]
+
+		new_time = station_start_spawn_time + rand(Exponential(1/rate), 1)[1]
+		if convert(Int64, floor(new_time/60)) <= hour
+			break
+		else
+			new_time = Inf
+			continue 
+		end 
+	end
+	
+	if new_time == Inf
+		return Dict() 
 	end
 
-	rate = s.spawn_rate[target][station_start_spawn_hour]
-
 	data_update = add_commuter_to_station!(time, metro, s, new_commuter)
-
-	new_time = station_start_spawn_time + rand(Exponential(1/rate), 1)[1]
 
 	next_spawn_event = Event(
 			new_time,
