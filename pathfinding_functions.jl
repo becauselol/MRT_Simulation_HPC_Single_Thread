@@ -185,7 +185,9 @@ function get_interchange_paths(station_dict, lines,  commuter_graph)
 						paths[i_id][j_id][board] = []
 					end 				
 
-					push!(paths[i_id][j_id][board], alight)
+					if !(alight in paths[i_id][j_id][board])
+						push!(paths[i_id][j_id][board], alight)
+					end
 				end
 			end 
 

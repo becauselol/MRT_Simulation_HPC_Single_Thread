@@ -27,16 +27,16 @@ mutable struct Station
 	codes::Vector
 	name::String
 	stationCodes::Vector{String}
-	spawn_rate::Dict{String, Float64}
+	spawn_rate::Dict{String, Dict{Int64, Float64}}
 	time_to_next_spawn::Dict{String, Int64}
 	neighbours::Dict{String, Dict{String, Vector}}
 	train_transit_time::Int64
 	commuters::Dict{String, Vector{Any}} # Dictionary, key: train to board, valu: List of commuters
 
-	function Station(station_id::String, codes::Vector{Any}, name::String, stationCodes::Vector{Any})
+	function Station(station_id::String, name::String, stationCodes::Vector{Any})
 		return new(
 				station_id,
-				codes,
+				[],
 				name,
 				stationCodes,
 				Dict(),

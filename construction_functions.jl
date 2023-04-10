@@ -1,27 +1,23 @@
-function construct_station_dict(station_string)
+using CSV
+
+function construct_station_dict(station_csv_location)
 	station_count = 1
 
 	station_data = Dict()
 
-	# for each station in station_string
-	for station_details in eachsplit(station_string, "\n")
-    	station_arr = String.(split(station_details, ","))
+	station_csv = CSV.File(station_csv_location, header=false)
 
-    	station_name = String(station_arr[1])
+	# for each station in station_string
+	for row in station_csv
+    	station_name = String(row[1])
 
     	stationCodes = []
-        for c in eachsplit(station_arr[2], "/")
+        for c in eachsplit(row[2], "/")
             push!(stationCodes, String(c))
         end
 
-    	lineCodes = []
-    	for c in stationCodes
-    		push!(lineCodes, String(first(c,3)))
-    	end
-
     	station_data["station_$station_count"] = Station(
     			"station_$station_count",
-				lineCodes,
 				station_name,
 				stationCodes
     		)
@@ -50,12 +46,12 @@ function create_station_code_map(station_dict)
 	return code_map
 end
 
-function construct_edges_from_edges_dict!(station_dict, edges_dict)
+function construct_edges_from_edges_dict!(station_dict, line_names)
 	# create code mapping for stations
 	code_map = create_station_code_map(station_dict)
 	start_station_dict = Dict()
-	for (line_code, edges_string) in edges_dict
-		start_station_id = construct_edges_for_line!(line_code, edges_string, station_dict, code_map)
+	for line_code in line_names
+		start_station_id = construct_edges_for_line!(line_code, station_dict, code_map)
 		start_station_dict[line_code] = start_station_id
 	end
 
@@ -69,18 +65,22 @@ function add_station_neighbour!(from_station, to_station_id, line, direction, we
 	from_station.neighbours[line][direction] = [to_station_id, weight]
 end
 
-function construct_edges_for_line!(line_code, edges_string, station_dict, code_map)
+function construct_edges_for_line!(line_code, station_dict, code_map)
+
+	edges_csv = CSV.File("data/input/$(line_code)_data.csv", header=false)
+
 	# for each station in station_string
-	all_edges_details = collect(eachsplit(edges_string, "\n"))
-	first_edge = all_edges_details[1]
-	first_station = String.(split(first_edge, ","))[1]
+	first_edge = edges_csv[1]
+	first_station_code = String(first_edge[1])
 
-	for edge_details in eachsplit(edges_string, "\n")
-    	edge_arr = String.(split(edge_details, ","))
+	first_station_id = code_map[first_station_code]
+	first_station = station_dict[first_station_id]
+	push!(first_station.codes, line_code)
 
-    	from_station_code = String(edge_arr[1])
-    	to_station_code = String(edge_arr[2])
-    	time_taken = parse(Float64, edge_arr[3])
+	for edge_details in edges_csv
+    	from_station_code = String(edge_details[1])
+    	to_station_code = String(edge_details[2])
+    	time_taken = convert(Float64, edge_details[3])
 
     	from_station_id = code_map[from_station_code]
     	to_station_id = code_map[to_station_code]
@@ -88,11 +88,14 @@ function construct_edges_for_line!(line_code, edges_string, station_dict, code_m
     	from_station = station_dict[from_station_id]
     	to_station = station_dict[to_station_id]
 
+    	push!(to_station.codes, line_code)
     	add_station_neighbour!(from_station, to_station_id, line_code, "FW", time_taken)
     	add_station_neighbour!(to_station, from_station_id, line_code, "BW", time_taken)
 	end
 
-	return code_map[first_station]
+	
+
+	return first_station_id
 end
 
 function construct_lines_from_start_stations(station_dict, start_stations)

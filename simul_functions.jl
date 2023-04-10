@@ -4,7 +4,7 @@ include("station_functions.jl")
 include("utility_functions.jl")
 include("data_store_functions.jl")
 
-function spawn_commuter!(;time, metro, rate, station, target)
+function spawn_commuter!(;time, metro, station, target)
 	
 	s = metro.stations[station]
 
@@ -18,15 +18,37 @@ function spawn_commuter!(;time, metro, rate, station, target)
 			0
 		)
 
+	current_hour = convert(Int32, floor(time/60))
+
+	if !haskey(s.spawn_rate[target], current_hour)
+		hours = [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+		index = findfirst(==(current_hour), hours)
+		index += 1
+		while index <= size(hours)[1] && !haskey(s.spawn_rate[target], hours[index])
+			index += 1
+		end
+		if index > size(hours)[1]
+			return Dict()
+		end
+
+		station_start_spawn_hour = hours[index]
+		station_start_spawn_time = station_start_spawn_hour * 60
+	else
+		station_start_spawn_hour = current_hour
+		station_start_spawn_time = time
+	end
+
+	rate = s.spawn_rate[target][station_start_spawn_hour]
+
 	data_update = add_commuter_to_station!(time, metro, s, new_commuter)
 
-	new_time = time + rand(Exponential(rate), 1)[1]
+	new_time = station_start_spawn_time + rand(Exponential(1/rate), 1)[1]
+
 	next_spawn_event = Event(
 			new_time,
 			spawn_commuter!,
 			Dict(
 					:time => new_time,
-					:rate => rate,
 					:station => station,
 					:target => target
 				)
@@ -161,10 +183,23 @@ function simulate!(max_time, metro, event_queue, data_store)
 			"wait_time" => update_wait_time!,
 			"perc_wait_time" => update_perc_wait_time!
 		)
+	curr_min = convert(Int64, floor(event_queue[1].time))
+	@info "$(now()): start time is $curr_min"
 
+	events_simulated = 0
 	while event_queue[1].time < max_time
 		# release the most recent event
 		curr_event = heappop!(event_queue)
+		events_simulated += 1
+		if convert(Int64, floor(event_queue[1].time)) != curr_min
+			curr_min = convert(Int64, floor(event_queue[1].time))
+
+			@info "processed $(events_simulated) events"
+			@info "$(now()): time is now $curr_min"
+			@info "size of event queue $(size(event_queue)[1])"
+
+			# events_processed = 0
+		end
 		# do whatever the event requires
 		update = curr_event.fun(;curr_event.params..., metro=metro)
 

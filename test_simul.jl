@@ -2,7 +2,7 @@
 # Create a simple graph and have 1 train 1 line and low spawn rate per line
 ###
 using Logging
-using DataFrames, StatsPlots, Distributions
+using DataFrames
 
 include("simul_functions.jl")
 include("construction_functions.jl")
@@ -16,49 +16,53 @@ include("hdf5_functions.jl")
 
 # io = open("log.txt", "w+")
 # logger = SimpleLogger(io)
-logger = ConsoleLogger(stderr, Logging.Debug)
+logger = ConsoleLogger(stderr, Logging.Info)
 # fileLogger = SimpleLogger(io, Logging.Debug)
 # global_logger(fileLogger)
 global_logger(logger)
 
-max_time = 100
-station_data = """Station 1,red01
-Station 2,red02/pur02
-Station 3,red03/pur03
-Station 4,pur01
-Station 5,pur04"""
+max_time = 1440
+start_time = 345
+# station_data = """Station 1,red01
+# Station 2,red02/pur02
+# Station 3,red03/pur03
+# Station 4,pur01
+# Station 5,pur04
+# Station 6,red04"""
 
-travel_data = Dict(
-	"pur" => """pur01,pur02,2
-pur02,pur03,2
-pur03,pur04,2""",
-	"red" => """red01,red02,2
-red02,red03,2"""
-	)
+# travel_data = Dict(
+# 	"pur" => """pur01,pur02,2
+# pur02,pur03,2
+# pur03,pur04,2""",
+# 	"red" => """red01,red02,2
+# red02,red03,2
+# red03,red04,2"""
+# 	)
 
-# not being used at the moment
-train_wait_time = """red01,1
-red02,1
-red03,1
-pur01,1
-pur04,1"""
+# # not being used at the moment
+# train_wait_time = """red01,1
+# red02,1
+# red03,1
+# pur01,1
+# pur04,1"""
 
-trainPeriod = 1
-trainCapacity = 150
+train_period = 2
+train_capacity = 1000
 
-spawn_labels = ["Station 1", "Station 2", "Station 3", "Station 4", "Station 5"]
-spawn_rates = [0 2 2 2 2;
-1 0 1 1 1;
-2 2 0 2 2;
-1 1 1 0 1;
-1 1 1 1 0]
-
-station_dict = construct_station_dict(station_data)
+# spawn_labels = ["Station 1", "Station 2", "Station 3", "Station 4", "Station 5", "Station 6"]
+# spawn_rates = [0 1 1 1 1 1;
+# 1 0 1 1 1 1;
+# 1 1 0 1 1 1;
+# 1 1 1 0 1 1;
+# 1 1 1 1 0 1;
+# 1 1 1 1 1 0]
+@info "$(now()): initialization starting at time "
+station_dict = construct_station_dict("data/input/station_data.csv")
 
 station_name_id_map = construct_station_name_id_map(station_dict)
 
 # construct the edges
-start_stations = construct_edges_from_edges_dict!(station_dict, travel_data)
+start_stations = construct_edges_from_edges_dict!(station_dict, ["tel", "ccl", "ewl", "nsl", "nel", "cgl", "dtl"])
 
 lines = construct_lines_from_start_stations(station_dict, start_stations)
 
@@ -75,7 +79,7 @@ event_queue = []
 for line_code in keys(lines)
 	line_duration = get_line_duration(station_dict, lines, line_code)
 	depot_id = lines[line_code]["FW"][1]
-	result = create_period_train_placement_events(line_code, line_duration, 2, 1000, depot_id)
+	result = create_period_train_placement_events(line_code, line_duration, train_period, train_capacity, depot_id, "FW", start_time)
 
 	for (k,v) in result["trains"]
 		trains[k] = v 
@@ -84,7 +88,7 @@ for line_code in keys(lines)
 	append!(event_queue, result["events"])
 end
 
-spawn_events = create_spawn_events(spawn_labels, spawn_rates, station_name_id_map)
+spawn_events = create_spawn_events!("data/input/spawn_data.csv", station_dict, start_time)
 
 append!(event_queue, spawn_events)
 
@@ -93,9 +97,13 @@ metro = Metro(station_dict, trains, lines, paths);
 build_min_heap!(event_queue)
 
 data_store = Data_Store(Dict(), Dict(), Dict(), Dict(), Dict())
+@info "$(now()): initialization finish "
 
+@info "$(now()): starting simulation "
 final_data = simulate!(max_time, metro, event_queue, data_store)
+@info "$(now()): ending simulation "
 
+@info "storing data"
 store_final_data(final_data, max_time)
 
 

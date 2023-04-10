@@ -154,6 +154,9 @@ function alight_commuters!(time, metro, train, station)
 		if commuter.target == station.station_id
 			push!(station.commuters["terminating"], commuter)
  		else 
+ 			if !haskey(station.commuters, "waiting")
+ 				station.commuters["waiting"] = []
+ 			end
  			push!(station.commuters["waiting"], commuter)
 		end
 

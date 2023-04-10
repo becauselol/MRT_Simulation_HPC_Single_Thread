@@ -10,13 +10,13 @@ function create_trains(line_code, line_duration, period, capacity, direction="FW
 	return trains
 end
 
-function create_period_train_placement_events(line_code, line_duration, period, capacity, depot_id, direction="FW")
+function create_period_train_placement_events(line_code, line_duration, period, capacity, depot_id, direction="FW", start_time=0)
 	result = Dict()
 	result["events"] = []
 
 	result["trains"] = create_trains(line_code, line_duration, period, capacity, direction)
 	period = line_duration / length(result["trains"])
-	time = 0
+	time = start_time
 	for train_id in keys(result["trains"])
 		new_event = Event(
 			time,
