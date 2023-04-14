@@ -1,5 +1,3 @@
-using CSV
-
 function construct_station_dict(station_csv_location)
 	station_count = 1
 

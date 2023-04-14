@@ -1,5 +1,3 @@
-using HDF5, Dates
-
 function store_final_data(data, duration)
 	fid = h5open("data/scaledUp.h5", "cw") 
 	group_name = "dataset_d_$(duration)_run_$(now())"

@@ -1,18 +1,7 @@
 ###
 # Create a simple graph and have 1 train 1 line and low spawn rate per line
 ###
-using Logging
-using DataFrames
-
-include("simul_functions.jl")
-include("construction_functions.jl")
-include("station_functions.jl")
-include("train_functions.jl")
-include("pathfinding_functions.jl")
-include("commuter_functions.jl")
-include("classes.jl")
-include("heap_functions.jl")
-include("hdf5_functions.jl")
+include("import_all.jl")
 
 # io = open("log.txt", "w+")
 # logger = SimpleLogger(io)

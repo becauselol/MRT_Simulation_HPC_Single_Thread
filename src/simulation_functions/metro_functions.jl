@@ -1,10 +1,5 @@
-function get_number_commuters(obj)
-	# REQUIRE obj to have attribute commuters
-	count = 0
-	for (key, value) in obj.commuters
-	    count += size(value)[1]
-	end
-	return count
+function add_station!(metro, station)
+	metro.stations[station.station_id] = station 
 end
 
 function get_line_duration(station_dict, lines, line_code)
@@ -34,3 +29,14 @@ function get_direction(fw_path, i_id, j_id)
 		return "BW"
 	end
 end
+
+function get_number_commuters(obj)
+	# REQUIRE obj to have attribute commuters
+	count = 0
+	for (key, value) in obj.commuters
+	    count += size(value)[1]
+	end
+	return count
+end
+	
+	
