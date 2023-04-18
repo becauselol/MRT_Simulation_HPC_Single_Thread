@@ -186,21 +186,21 @@ function simulate!(max_time, metro, event_queue, data_store)
 			"wait_time" => update_wait_time!,
 			"perc_wait_time" => update_perc_wait_time!
 		)
-	curr_min = convert(Int64, floor(event_queue[1].time/60))
+	curr_min = convert(Int64, floor(peek(event_queue)[1].time/60))
 	@info "$(now()): start time is $curr_min"
 
 	events_simulated = 0
-	while event_queue[1].time < max_time
+	while peek(event_queue)[1].time < max_time
 		# release the most recent event
-		curr_event = heappop!(event_queue)
+		curr_event = dequeue!(event_queue)
 		events_simulated += 1
 
-		if convert(Int64, floor(event_queue[1].time/60)) != curr_min
-			curr_min = convert(Int64, floor(event_queue[1].time/60))
+		if convert(Int64, floor(peek(event_queue)[1].time/60)) != curr_min
+			curr_min = convert(Int64, floor(peek(event_queue)[1].time/60))
 
 			@info "processed $(events_simulated) events"
 			@info "$(now()): time is now $curr_min"
-			@info "size of event queue $(size(event_queue)[1])"
+			@info "size of event queue $(length(event_queue))"
 
 			# events_processed = 0
 		end
@@ -218,7 +218,7 @@ function simulate!(max_time, metro, event_queue, data_store)
 		# update and add the new events generated
 		new_events = get(update, "new_events", [])
 		for i in new_events
-			heappush!(event_queue, i)
+			enqueue!(event_queue, i, i.time)
 		end
 	end
 

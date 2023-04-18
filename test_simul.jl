@@ -36,7 +36,9 @@ get_all_path_pairs!(commuter_graph)
 paths = get_interchange_paths(station_dict, lines, commuter_graph)
 
 trains = Dict()
-event_queue = []
+
+event_queue = PriorityQueue{Event, Float64}()
+
 for line_code in keys(lines)
 	line_duration = get_line_duration(station_dict, lines, line_code)
 	depot_id = lines[line_code]["FW"][1]
@@ -46,16 +48,19 @@ for line_code in keys(lines)
 		trains[k] = v 
 	end 
 
-	append!(event_queue, result["events"])
+	for i in result["events"]
+		enqueue!(event_queue, i, i.time)
+	end
 end
 
 spawn_events = create_spawn_events!("data/input/spawn_data.csv", station_dict, start_time)
 
-append!(event_queue, spawn_events)
+for i in spawn_events 
+	enqueue!(event_queue, i, i.time)
+end 
 
 metro = Metro(station_dict, trains, lines, paths);
 
-build_min_heap!(event_queue)
 
 data_store = Data_Store(Dict(), Dict(), Dict(), Dict(), Dict())
 @info "$(now()): initialization finish "
