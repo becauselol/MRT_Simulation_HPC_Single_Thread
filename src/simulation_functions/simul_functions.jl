@@ -1,6 +1,6 @@
 # all functions return a new event function
 # The new event function adds all the events into the queue
-function spawn_commuter!(;time, metro, station, target)
+function spawn_commuter!(;time, metro, station, target, max_rate)
 	
 	s = metro.stations[station]
 
@@ -14,38 +14,16 @@ function spawn_commuter!(;time, metro, station, target)
 			0
 		)
 
-	start_hour = convert(Int32, floor(time/60))
+	hour = convert(Int32, floor(time/60))
 
-	new_time = Inf
-	# @info "$station $target"
+	if (rand() <= s.spawn_rate[target][hour]/max_rate)
+		data_update = add_commuter_to_station!(time, metro, s, new_commuter)
+		count = 1
+	else 
+		count = 0
+	end 
 
-	for hour in start_hour:23
-
-		if !haskey(s.spawn_rate[target], hour)
-			continue
-		end
-		if hour == start_hour	
-			station_start_spawn_time = time
-		else 
-			station_start_spawn_time = hour * 60
-		end
-
-		rate = s.spawn_rate[target][hour]
-
-		new_time = station_start_spawn_time + rand(Exponential(1/rate), 1)[1]
-		if convert(Int64, floor(new_time/60)) <= hour
-			break
-		else
-			new_time = Inf
-			continue 
-		end 
-	end
-	
-	if new_time == Inf
-		return Dict() 
-	end
-
-	data_update = add_commuter_to_station!(time, metro, s, new_commuter)
+	new_time = time + rand(Exponential(1/max_rate), 1)[1]
 
 	next_spawn_event = Event(
 			new_time,
@@ -53,12 +31,13 @@ function spawn_commuter!(;time, metro, station, target)
 			Dict(
 					:time => new_time,
 					:station => station,
-					:target => target
+					:target => target,
+					:max_rate => max_rate
 				)
 		)
 
 	return Dict(
-			"spawn_count" => 1,
+			"spawn_count" => count,
 			"new_events" => [next_spawn_event]
 		)
 end
@@ -176,7 +155,7 @@ function train_leave_station!(;time, metro, train, station)
 end
 
 
-function simulate!(max_time, metro, event_queue, data_store)
+function simulate!(max_time, metro, event_queue)
 
 	curr_min = convert(Int64, floor(event_queue[1].time/60))
 	# @info "$(now()): start time is $curr_min"
@@ -213,5 +192,5 @@ function simulate!(max_time, metro, event_queue, data_store)
 		end
 	end
 	@info "spawned: $(cum_spawn), terminated: $(cum_term)"
-	return data_store
+	return 
 end
