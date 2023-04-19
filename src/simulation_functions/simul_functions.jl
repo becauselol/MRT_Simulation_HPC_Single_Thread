@@ -58,7 +58,7 @@ function spawn_commuter!(;time, metro, station, target)
 		)
 
 	return Dict(
-			"data_store" => data_update,
+			"spawn_count" => 1,
 			"new_events" => [next_spawn_event]
 		)
 end
@@ -69,7 +69,7 @@ function terminate_commuters!(;time, metro, station)
 	data_update = remove_commuter_from_station!(time, metro, s)
 	
 	return Dict(
-			"data_store" => data_update
+			"term_count"=> data_update
 		)
 end
 
@@ -99,7 +99,7 @@ function train_reach_station!(;time, metro, train, station)
 	# alight and board passengers
 	@debug "time $(round(time; digits=2)): Train $train reaching Station $station"
 
-	data_update = alight_commuters!(time, metro, t, s)
+	alight_commuters!(time, metro, t, s)
 	
 	new_time = time + metro.stations[station].train_transit_time
 
@@ -128,7 +128,6 @@ function train_reach_station!(;time, metro, train, station)
 		)
 	push!(events, leave_station_event)
 	return Dict(
-			"data_store" => data_update,
 			"new_events" => events
 		)
 end
@@ -158,7 +157,7 @@ function train_leave_station!(;time, metro, train, station)
 
 	end
 
-	data_update = board_commuters!(time, metro, t, s)
+	board_commuters!(time, metro, t, s)
 
 	new_time = time + next_station[2]
 	reach_station_event = Event(
@@ -172,22 +171,18 @@ function train_leave_station!(;time, metro, train, station)
 		)
 
 	return Dict(
-			"data_store" => data_update,
 			"new_events" => [reach_station_event]
 		)
 end
 
 
 function simulate!(max_time, metro, event_queue, data_store)
-	update_function = Dict(
-			"train_count" => update_train_count!,
-			"station_count" => update_station_count!,
-			"travel_time" => update_travel_time!,
-			"wait_time" => update_wait_time!,
-			"perc_wait_time" => update_perc_wait_time!
-		)
+
 	curr_min = convert(Int64, floor(event_queue[1].time/60))
-	@info "$(now()): start time is $curr_min"
+	# @info "$(now()): start time is $curr_min"
+
+	cum_term = 0
+	cum_spawn = 0
 
 	events_simulated = 0
 	while event_queue[1].time < max_time
@@ -195,25 +190,21 @@ function simulate!(max_time, metro, event_queue, data_store)
 		curr_event = heappop!(event_queue)
 		events_simulated += 1
 
-		if convert(Int64, floor(event_queue[1].time/60)) != curr_min
-			curr_min = convert(Int64, floor(event_queue[1].time/60))
+		# if convert(Int64, floor(event_queue[1].time/60)) != curr_min
+		# 	curr_min = convert(Int64, floor(event_queue[1].time/60))
 
-			@info "processed $(events_simulated) events"
-			@info "$(now()): time is now $curr_min"
-			@info "size of event queue $(size(event_queue)[1])"
+		# 	@info "processed $(events_simulated) events"
+		# 	@info "$(now()): time is now $curr_min"
+		# 	@info "size of event queue $(size(event_queue)[1])"
 
-			# events_processed = 0
-		end
+		# 	# events_processed = 0
+		# end
 		# do whatever the event requires
 		update = curr_event.fun(;curr_event.params..., metro=metro)
 
-		# update the various statistics
-		data_update = get(update, "data_store", Dict())
-		for (k, v) in data_update
-			update_fun = update_function[k]
-			update_fun(data_store, v)
-		end
 		# add_data_stores!(data_store, data_store_update)
+		cum_spawn += get(update, "spawn_count", 0)
+		cum_term += get(update, "term_count", 0)
 
 		# update and add the new events generated
 		new_events = get(update, "new_events", [])
@@ -221,6 +212,6 @@ function simulate!(max_time, metro, event_queue, data_store)
 			heappush!(event_queue, i)
 		end
 	end
-
+	@info "spawned: $(cum_spawn), terminated: $(cum_term)"
 	return data_store
 end
