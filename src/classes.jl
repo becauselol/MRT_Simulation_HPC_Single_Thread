@@ -27,7 +27,7 @@ mutable struct Station
 	codes::Vector
 	name::String
 	stationCodes::Vector{String}
-	spawn_rate::Dict{String, Dict{Int64, Float64}}
+	spawn_rate::Dict{String, Vector{Float64}}
 	time_to_next_spawn::Dict{String, Int64}
 	neighbours::Dict{String, Dict{String, Vector}}
 	train_transit_time::Int64

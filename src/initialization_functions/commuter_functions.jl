@@ -38,10 +38,14 @@ function create_spawn_events!(spawn_data_file_path, station_dict, start_spawn_ti
 
 		from_station = station_dict[from_id]
 		if !haskey(from_station.spawn_rate, to_id)
-			from_station.spawn_rate[to_id] = Dict()
+			from_station.spawn_rate[to_id] = zeros(Float64, 24)
 		end
 
-		from_station.spawn_rate[to_id][hour] = rate
+		if hour == 0
+			from_station.spawn_rate[to_id][24] = rate
+		else
+			from_station.spawn_rate[to_id][hour] = rate
+		end
 	end
 
 	start_hour = convert(Int64, floor(start_spawn_time/60))
@@ -56,34 +60,11 @@ function create_spawn_events!(spawn_data_file_path, station_dict, start_spawn_ti
 				continue
 			end
 
-			new_time = Inf
-			# @info "$station $target"
-
-			for hour in start_hour:23
-				if !haskey(i_station.spawn_rate[j_id], hour)
-					continue
-				end
-				if hour == start_hour	
-					station_start_spawn_time = start_spawn_time
-				else 
-					station_start_spawn_time = hour * 60
-				end
-
-				rate = i_station.spawn_rate[j_id][hour]
-
-				new_time = station_start_spawn_time + rand(Exponential(1/rate), 1)[1]
-
-				if convert(Int64, floor(new_time/60)) <= hour
-					break
-				else
-					new_time = Inf
-					continue 
-				end 
-			end
-
-			if new_time == Inf
-				continue
-			end
+			max_rate = maximum(i_station.spawn_rate[j_id])
+			if max_rate == 0 
+				continue 
+			end 
+			new_time = start_spawn_time + rand(Exponential(1/max_rate), 1)[1]
 
 			new_event = Event(
 					new_time,
@@ -91,7 +72,8 @@ function create_spawn_events!(spawn_data_file_path, station_dict, start_spawn_ti
 					Dict(
 							:time => new_time,
 							:station => i_id,
-							:target => j_id
+							:target => j_id,
+							:max_rate => max_rate
 						)
 				)
 			push!(events, new_event)

@@ -62,15 +62,13 @@ end
 metro = Metro(station_dict, trains, lines, paths);
 
 
-data_store = Data_Store(Dict(), Dict(), Dict(), Dict(), Dict())
+# data_store = Data_Store(Dict(), Dict(), Dict(), Dict(), Dict())
 @info "$(now()): initialization finish "
 
 @info "$(now()): starting simulation "
-final_data = simulate!(max_time, metro, event_queue, data_store)
+final_data = simulate!(max_time, metro, event_queue)
 @info "$(now()): ending simulation "
 
-@info "storing data"
-store_final_data(final_data, max_time)
 
 
 # for (k, v) in final_data.wait_times
