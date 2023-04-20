@@ -164,11 +164,10 @@ function simulate!(max_time, metro, event_queue)
 	cum_spawn = 0
 
 	events_simulated = 0
-	while event_queue[1].time < max_time
+	while peek(event_queue)[1].time < max_time
 		# release the most recent event
-		curr_event = heappop!(event_queue)
+		curr_event = dequeue!(event_queue)
 		events_simulated += 1
-
 		update = curr_event.fun(;curr_event.params..., metro=metro)
 
 		# add_data_stores!(data_store, data_store_update)
@@ -178,7 +177,7 @@ function simulate!(max_time, metro, event_queue)
 		# update and add the new events generated
 		new_events = get(update, "new_events", [])
 		for i in new_events
-			heappush!(event_queue, i)
+			enqueue!(event_queue, i, i.time)
 		end
 	end
 	@info "spawned: $(cum_spawn), terminated: $(cum_term)"
