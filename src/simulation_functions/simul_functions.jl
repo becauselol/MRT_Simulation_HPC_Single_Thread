@@ -169,16 +169,6 @@ function simulate!(max_time, metro, event_queue)
 		curr_event = heappop!(event_queue)
 		events_simulated += 1
 
-		# if convert(Int64, floor(event_queue[1].time/60)) != curr_min
-		# 	curr_min = convert(Int64, floor(event_queue[1].time/60))
-
-		# 	@info "processed $(events_simulated) events"
-		# 	@info "$(now()): time is now $curr_min"
-		# 	@info "size of event queue $(size(event_queue)[1])"
-
-		# 	# events_processed = 0
-		# end
-		# do whatever the event requires
 		update = curr_event.fun(;curr_event.params..., metro=metro)
 
 		# add_data_stores!(data_store, data_store_update)
