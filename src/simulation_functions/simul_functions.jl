@@ -157,7 +157,7 @@ end
 
 function simulate!(max_time, metro, event_queue)
 
-	curr_min = convert(Int64, floor(event_queue[1].time/60))
+	curr_min = convert(Int64, floor(peek(event_queue)[1].time/60))
 	# @info "$(now()): start time is $curr_min"
 
 	cum_term = 0
